@@ -2,6 +2,8 @@ import pygatt
 import retrying
 import struct
 
+TIMEOUT = 2
+
 
 def _crc(data):
     i = 0
@@ -36,7 +38,9 @@ def _send(address, payload):
     adapter = pygatt.GATTToolBackend()
     adapter.start()
     device = adapter.connect(
-        address, address_type=pygatt.BLEAddressType.random)
+        address,
+        timeout=TIMEOUT,
+        address_type=pygatt.BLEAddressType.random)
     device.char_write_handle(0x11, payload)
 
 
