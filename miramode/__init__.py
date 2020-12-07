@@ -4,6 +4,13 @@ import struct
 
 TIMEOUT = 2
 
+UUID_DEVICE_NAME = "00002a00-0000-1000-8000-00805f9b34fb"
+UUID_MODEL_NUMBER = "00002a24-0000-1000-8000-00805f9b34fb"
+UUID_MANUFACTURER = "00002a29-0000-1000-8000-00805f9b34fb"
+
+UUID_READ = "bccb0003-ca66-11e5-88a4-0002a5d5c51b"
+UUID_WRITE = "bccb0002-ca66-11e5-88a4-0002a5d5c51b"
+
 
 def _crc(data):
     i = 0
@@ -33,15 +40,56 @@ def _convert_temperature(celsius):
     return int(max(0, min(255, round(celsius * 10.4 - 268))))
 
 
+def _convert_temperature_reverse(mira_temp):
+    return round((mira_temp + 268) / 10.4, 2)
+
+
 @retrying.retry(stop_max_attempt_number=10)
-def _send(address, payload):
+def _connect(address):
     adapter = pygatt.GATTToolBackend()
     adapter.start()
     device = adapter.connect(
         address,
         timeout=TIMEOUT,
         address_type=pygatt.BLEAddressType.random)
-    device.char_write_handle(0x11, payload)
+    return device
+
+
+def _read(address):
+    device = _connect(address)
+    return device.char_read(UUID_READ)
+
+
+def _write(address, payload):
+    device = _connect(address)
+    device.char_write(UUID_WRITE, payload)
+
+
+def get_device_info(address):
+    device = _connect(address)
+    device_name = device.char_read(UUID_DEVICE_NAME).decode('UTF-8')
+    manufacturer = device.char_read(UUID_MANUFACTURER).decode('UTF-8')
+    model_number = device.char_read(UUID_MODEL_NUMBER).decode('UTF-8')
+
+    return (device_name, manufacturer, model_number)
+
+
+def get_state(address):
+    data = _read(address)
+    # TODO: In some case it returns different data, without outlet values
+    if len(data) == 19:
+        return
+
+    if len(data) != 14:
+        raise Exception("Unexpected data length")
+
+    temperature = _convert_temperature_reverse(data[6])
+    # Bytes at 7 and 8 are related to the temperature set on the shower
+    # controller.
+    outlet1 = data[9] == 0x64
+    outlet2 = data[10] == 0x64
+
+    return (outlet1, outlet2, temperature)
 
 
 def control_outlets(address, device_id, client_id, outlet1, outlet2,
@@ -54,9 +102,9 @@ def control_outlets(address, device_id, client_id, outlet1, outlet2,
         _convert_temperature(temperature),
         0x64 if outlet1 else 0,
         0x64 if outlet2 else 0])
-    _send(address, _get_payload_with_crc(payload, client_id))
+    _write(address, _get_payload_with_crc(payload, client_id))
 
 
 def turn_on_bathfill(address, device_id, client_id):
     payload = bytearray([device_id, 0xb1, 0x01, 0x00])
-    _send(address, _get_payload_with_crc(payload, client_id))
+    _write(address, _get_payload_with_crc(payload, client_id))
