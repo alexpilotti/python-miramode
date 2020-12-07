@@ -2,7 +2,7 @@ import pygatt
 import retrying
 import struct
 
-TIMEOUT = 2
+TIMEOUT = 1
 
 UUID_DEVICE_NAME = "00002a00-0000-1000-8000-00805f9b34fb"
 UUID_MODEL_NUMBER = "00002a24-0000-1000-8000-00805f9b34fb"
