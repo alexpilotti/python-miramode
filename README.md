@@ -30,7 +30,7 @@ pip install -r requirements.txt
 ## Examples
 
 ```python
-import mira
+import miramode
 
 # This is the BLE address of the device
 address = "xx:xx:xx:xx:xx:xx"
