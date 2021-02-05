@@ -30,7 +30,7 @@ pip install -r requirements.txt
 ## Examples
 
 ```python
-import mira
+import miramode
 
 # This is the BLE address of the device
 address = "xx:xx:xx:xx:xx:xx"
@@ -39,19 +39,19 @@ device_id = 1
 client_id = 12345
 
 # Turn on the 1st outlet with a 40C degrees water temperature
-mira.control_outlets(address, device_id, client_id, True, False, 40)
+miramode.control_outlets(address, device_id, client_id, True, False, 40)
 
 # Turn on both outlets
-mira.control_outlets(address, device_id, client_id, True, True, 40)
+miramode.control_outlets(address, device_id, client_id, True, True, 40)
 
 # Turn on the bathfill with the default memorized temperature
-mira.turn_on_bathfill(address, device_id, client_id)
+miramode.turn_on_bathfill(address, device_id, client_id)
 
 # Turn off
-mira.control_outlets(address, device_id, client_id, False, False, 40)
+miramode.control_outlets(address, device_id, client_id, False, False, 40)
 ```
 
-## How to obtain the device and client ids 
+## How to obtain the device and client ids
 
 At the moment the way in which those ids are obtained is by using a BLE
 sniffer, like the *Bluefruit LE Sniffer* from Adafruit, to get packets
