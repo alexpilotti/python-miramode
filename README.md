@@ -25,12 +25,19 @@ use at your own risk!*
 ## Requirements
 
 1. Python 3.9 and above
+2. Gatttool, a common BLE CLI tool on Linux
+3. Install this project:
 
 ```console
+cd python-miramode
+
+# Optionally use a Python virtual environment:
+python3 -m venv venv
+. venv/bin/activate
+
 pip install .
 ```
 
-2. Gatttool, a common BLE CLI tool on Linux
 
 ## CLI Examples
 
