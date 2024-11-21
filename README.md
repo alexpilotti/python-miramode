@@ -16,55 +16,59 @@ with BLE capabilities, allowing an easy integration with projects like
 Home Assistant which can then expose the shower outlets as switches to
 Alexa or Google Home.
 
+This project contains a CLI utility to perform operations on the shower and
+a Python library that can be used by other projects.
+
 *Disclaimer: this projects contains only the results of personal experiments,
 use at your own risk!*
 
 ## Requirements
 
-1. Python (3.x preferabily, but works with 2.7 as well)
+1. Python 3.9 and above
+
+```console
+pip install .
 ```
-pip install -r requirements.txt
-```
+
 2. Gatttool, a common BLE CLI tool on Linux
 
-## Examples
+## CLI Examples
 
-```python
-import miramode
+First, obtain the address of your device. Look for devices with a name
+starting with *Mira*:
 
-# This is the BLE address of the device
-address = "xx:xx:xx:xx:xx:xx"
-# See below for how to obtain the device_id and client_id
-device_id = 1
-client_id = 12345
-
-# Turn on the 1st outlet with a 40C degrees water temperature
-miramode.control_outlets(address, device_id, client_id, True, False, 40)
-
-# Turn on both outlets
-miramode.control_outlets(address, device_id, client_id, True, True, 40)
-
-# Turn on the bathfill with the default memorized temperature
-miramode.turn_on_bathfill(address, device_id, client_id)
-
-# Turn off
-miramode.control_outlets(address, device_id, client_id, False, False, 40)
+```console
+sudo hcitool lescan
 ```
 
-## How to obtain the device and client ids
+### Pair a new client
 
-At the moment the way in which those ids are obtained is by using a BLE
-sniffer, like the *Bluefruit LE Sniffer* from Adafruit, to get packets
-exchanged between your phone Mira Mode app and the Mira Shower when an
-outlet is turned on, using e.g. Wireshark. This complication can be
-avoided by finding out how the device pairing protocol works,
-something on the TODO list.
+The _-c_ argument is optional, if not provided, the CLI will generate a
+random id.
 
-What we are looking for are binary payloads written to the BLE
-characterist 0x11 which look for example like this:
+```console
+miramodecli client-pair -a "xx:xx:xx:xx:xx:xx" -c 100100  -n Foobar
+```
 
-*XX:87:05:01:01:90:64:00:YY:YY*
+### List existing clients:
 
-XX is your device id and YYYY is a CRC code obtained from the rest of
-the payload plus the client id. Being the client id a 32 bit adapter,
-it can be quickly computed with a brute force loop.
+The following command will list the existing clients, please note that it
+requires a valid client id and its corresponding slot, obtained from a
+previous pairing:
+
+```console
+client-list -a "xx:xx:xx:xx:xx:xx" -c <client_id> -s <client_slot>
+```
+
+## Set debug logging level
+
+For additional logging details, all commands support a _--debug_ argument, e.g:
+
+```console
+miramodecli client-pair -a "xx:xx:xx:xx:xx:xx" -c 100100  -n Foobar --debug
+```
+
+## Acknowledgements
+
+Many thanks to Nigel Hannam for his excellent work in documenting the BLE
+protocol: https://github.com/nhannam/shower-controller-documentation
