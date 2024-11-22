@@ -67,6 +67,13 @@ previous pairing:
 client-list -a "xx:xx:xx:xx:xx:xx" -c <client_id> -s <client_slot>
 ```
 
+### Unpair an existing client
+
+```console
+miramodecli client-unpair -a "xx:xx:xx:xx:xx:xx" -c <client_id> \
+-s <client_slot> -u <client_id_to_unpair>
+```
+
 ## Set debug logging level
 
 For additional logging details, all commands support a _--debug_ argument, e.g:

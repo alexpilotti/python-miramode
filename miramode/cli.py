@@ -8,6 +8,7 @@ import miramode
 
 CMD_LIST_CLIENTS = "client-list"
 CMD_PAIR_CLIENT = "client-pair"
+CMD_UNPAIR_CLIENT = "client-unpair"
 
 
 def _valid_client_id(value):
@@ -31,7 +32,7 @@ def _add_common_args(parser):
         help="Set debug logging level")
 
 
-def _add_list_clients_args(parser):
+def _add_client_args(parser):
     parser.add_argument(
         "-c", "--client-id", required=True,
         type=_valid_client_id,
@@ -52,6 +53,13 @@ def _add_pair_client_args(parser):
         help="The name to assign to the new client")
 
 
+def _add_unpair_client_args(parser):
+    parser.add_argument(
+        "-u", "--client-slot-to-unpair", required=True,
+        type=int,
+        help="The client slot to unpair")
+
+
 def _parse_args():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(
@@ -61,13 +69,20 @@ def _parse_args():
         CMD_LIST_CLIENTS, help="List clients",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     _add_common_args(list_clients_parser)
-    _add_list_clients_args(list_clients_parser)
+    _add_client_args(list_clients_parser)
 
     pair_client_parser = subparsers.add_parser(
         CMD_PAIR_CLIENT, help="Pair a new client",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     _add_common_args(pair_client_parser)
     _add_pair_client_args(pair_client_parser)
+
+    unpair_client_parser = subparsers.add_parser(
+        CMD_UNPAIR_CLIENT, help="Unpair an existing client",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    _add_common_args(unpair_client_parser)
+    _add_client_args(unpair_client_parser)
+    _add_unpair_client_args(unpair_client_parser)
 
     # If no arguments are provided, print help
     if len(sys.argv) == 1:
@@ -80,8 +95,9 @@ def _parse_args():
 
 
 class Notifications(miramode.NotificationsBase):
-    def __init__(self, event):
+    def __init__(self, event, is_pairing=False):
         self._event = event
+        self._is_pairing = is_pairing
 
     def client_details(self, client_slot, client_name):
         print(f"{client_name}")
@@ -92,7 +108,12 @@ class Notifications(miramode.NotificationsBase):
         self._event.set()
 
     def success_or_failure(self, client_slot, status):
-        print(f"Result: {status}")
+        if self._is_pairing:
+            print(f"Assigned client slot: {status}")
+        elif status == miramode.SUCCESS:
+            print(f"The command completed successfully")
+        elif status == miramode.FAILURE:
+            print(f"The command failed")
         self._event.set()
 
 
@@ -119,7 +140,7 @@ def _process_pair_client_command(args):
     with miramode.Connnection(args.address) as conn:
 
         event = threading.Event()
-        notifications = Notifications(event)
+        notifications = Notifications(event, is_pairing=True)
         conn._subscribe(notifications)
 
         new_client_id = args.client_id
@@ -131,6 +152,19 @@ def _process_pair_client_command(args):
               f"name: {args.client_name}")
 
         conn.pair_client(new_client_id, args.client_name)
+        event.wait()
+        event.clear()
+
+
+def _process_unpair_client_command(args):
+    with miramode.Connnection(
+            args.address, args.client_id, args.client_slot) as conn:
+
+        event = threading.Event()
+        notifications = Notifications(event)
+        conn._subscribe(notifications)
+
+        conn.unpair_client(args.client_slot_to_unpair)
         event.wait()
         event.clear()
 
@@ -151,6 +185,8 @@ def main():
         _process_list_clients_command(args)
     elif args.command == CMD_PAIR_CLIENT:
         _process_pair_client_command(args)
+    elif args.command == CMD_UNPAIR_CLIENT:
+        _process_unpair_client_command(args)
 
 
 if __name__ == '__main__':

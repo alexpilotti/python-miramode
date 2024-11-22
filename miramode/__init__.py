@@ -17,6 +17,9 @@ UUID_WRITE = "bccb0002-ca66-11e5-88a4-0002a5d5c51b"
 
 MAGIC_ID = 0x54d2ee63
 
+FAILURE = 0x80
+SUCCESS = 1
+
 
 def _crc(data):
     i = 0
@@ -350,6 +353,11 @@ class Connnection:
         payload = (bytearray([0, 0xeb, 24]) + new_client_id_bytes +
                    client_name_bytes)
         self._write_chunks(_get_payload_with_crc(payload, MAGIC_ID))
+
+    def unpair_client(self, client_slot_to_unpair):
+        payload = bytearray(
+            [self._client_slot, 0xeb, 1, client_slot_to_unpair])
+        self._write(_get_payload_with_crc(payload, self._client_id))
 
     def control_outlets(self, outlet1, outlet2, temperature):
         payload = bytearray([
