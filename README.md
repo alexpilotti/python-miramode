@@ -95,6 +95,18 @@ miramodecli outlets-control -a <address> -c <client_id> -s <client_slot> \
 -o1 <on|off> -o2 <on|off> -t <temperature>
 ```
 
+### Start a preset
+
+This is useful for e.g. starting the bathtub fill.
+
+```console
+miramodecli preset-start -a <address> -c <client_id> -s <client_slot> \
+-p <preset_slot>
+```
+
+Use the _outlets-control_ command to turn off the outlet(s) before the
+preset's timer ends if needed.
+
 ## Set debug logging level
 
 For additional logging details, all commands support a _--debug_ argument, e.g:
