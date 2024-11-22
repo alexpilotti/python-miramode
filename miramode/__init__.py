@@ -1,7 +1,8 @@
 import logging
 import struct
 
-import pygatt
+import bleak
+from bleak.backends import characteristic
 import retrying
 
 logger = logging.getLogger(__name__)
@@ -127,50 +128,54 @@ class Connnection:
         self._client_id = client_id
         self._client_slot = client_slot
 
-    @retrying.retry(stop_max_attempt_number=10)
-    def connect(self):
-        adapter = pygatt.GATTToolBackend()
-        adapter.start()
+    #@retrying.retry(stop_max_attempt_number=10)
+    async def connect(self):
+        device = await bleak.BleakScanner.find_device_by_address(self._address, cb=dict(use_bdaddr=True))
+        if device is None:
+            raise Exception("Connection failed")
 
-        device = adapter.connect(
-            self._address,
-            timeout=TIMEOUT,
-            address_type=pygatt.BLEAddressType.random)
-
-        self._adapter = adapter
+        client = bleak.BleakClient(device)
+        print("connecting")
+        await client.connect()
+        print("connected")
+        self._client = client
         self._device = device
 
-    def disconnect(self):
-        self._device = None
-        self._adapter.stop()
-        self._adapter = None
+    async def disconnect(self):
+        await self._client.disconnect()
+        self._client = None
+        #self._device = None
 
-    def __enter__(self):
-        self.connect()
+    async def __aenter__(self):
+        await self.connect()
         return self
 
-    def __exit__(self, type, value, traceback):
-        self.disconnect()
+    async def __aexit__(self, type, value, traceback):
+        await self.disconnect()
 
     def _write_chunks(self, data, chunk_size=20):
         for chunk in _split_chunks(data, chunk_size):
             self._write(chunk)
 
-    def _write(self, data):
+    async def _write(self, data):
         logger.debug(f"Writing data: {_format_bytearray(data)}")
-        self._device.char_write(UUID_WRITE, data)
+        print("writing")
+        await self._client.write_gatt_char(UUID_WRITE, data, response=True)
+        print("written")
 
-    def subscribe(self, notifications):
+    async def subscribe(self, notifications):
         notifications.partial_payload = bytearray()
         notifications.client_slot = None
         notifications.expected_payload_length = None
 
-        self._device.subscribe(
-            UUID_READ,
-            callback=lambda handle, value: self._handle_data(
-                handle, value, notifications))
+        self._notifications = notifications
 
-    def _handle_data(self, handle, value, notifications):
+        print("Start notify")
+        await self._client.start_notify(UUID_READ, callback=self._handle_data)
+
+    def _handle_data(self, charachteristic, value):
+        notifications = self._notifications
+
         if len(notifications.partial_payload) > 0:
             notifications.partial_payload.extend(value)
             client_slot = notifications.client_slot
@@ -305,13 +310,13 @@ class Connnection:
 
         return (device_name, manufacturer, model_number)
 
-    def request_client_details(self, client_slot):
+    async def request_client_details(self, client_slot):
         payload = bytearray([self._client_slot, 0x6b, 1, 0x10 + client_slot])
-        self._write(_get_payload_with_crc(payload, self._client_id))
+        await self._write(_get_payload_with_crc(payload, self._client_id))
 
-    def request_client_slots(self):
+    async def request_client_slots(self):
         payload = bytearray([self._client_slot, 0x6b, 1, 0])
-        self._write(_get_payload_with_crc(payload, self._client_id))
+        await self._write(_get_payload_with_crc(payload, self._client_id))
 
     def request_device_settings(self):
         payload = bytearray([self._client_slot, 0x3e, 0])

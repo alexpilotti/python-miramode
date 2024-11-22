@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import logging
 import random
 import sys
@@ -119,21 +120,21 @@ class Notifications(miramode.NotificationsBase):
         self._event.set()
 
 
-def _process_list_clients_command(args):
-    with miramode.Connnection(
+async def _process_list_clients_command(args):
+    async with miramode.Connnection(
             args.address, args.client_id, args.client_slot) as conn:
 
         event = threading.Event()
         notifications = Notifications(event)
-        conn.subscribe(notifications)
+        await conn.subscribe(notifications)
 
-        conn.request_client_slots()
+        await conn.request_client_slots()
         event.wait()
         event.clear()
 
         for slot in notifications.slots:
             print(f"Requesting details for client slot: {slot}")
-            conn.request_client_details(slot)
+            await conn.request_client_details(slot)
             event.wait()
             event.clear()
 
@@ -184,7 +185,7 @@ def main():
     _setup_logging(args.debug)
 
     if args.command == CMD_LIST_CLIENTS:
-        _process_list_clients_command(args)
+        asyncio.run(_process_list_clients_command(args))
     elif args.command == CMD_PAIR_CLIENT:
         _process_pair_client_command(args)
     elif args.command == CMD_UNPAIR_CLIENT:
