@@ -6,6 +6,7 @@ import threading
 
 import miramode
 
+CMD_LIST_DEVICES = "devices-list"
 CMD_LIST_CLIENTS = "client-list"
 CMD_PAIR_CLIENT = "client-pair"
 CMD_UNPAIR_CLIENT = "client-unpair"
@@ -23,16 +24,21 @@ def _valid_client_id(value):
 
 def _add_common_args(parser):
     parser.add_argument(
-        "-a", "--address", required=True,
-        type=str,
-        help="The BLE address of the device")
-    parser.add_argument(
         '--debug', required=False,
         action='store_true',
         help="Set debug logging level")
 
 
+def _add_address_args(parser):
+    _add_common_args(parser)
+    parser.add_argument(
+        "-a", "--address", required=True,
+        type=str,
+        help="The BLE address of the device")
+
+
 def _add_client_args(parser):
+    _add_address_args(parser)
     parser.add_argument(
         "-c", "--client-id", required=True,
         type=_valid_client_id,
@@ -65,22 +71,25 @@ def _parse_args():
     subparsers = parser.add_subparsers(
         dest='command', required=True, help="Available commands")
 
+    list_devices_parser = subparsers.add_parser(
+        CMD_LIST_DEVICES, help="List devices",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    _add_common_args(list_devices_parser)
+
     list_clients_parser = subparsers.add_parser(
         CMD_LIST_CLIENTS, help="List clients",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    _add_common_args(list_clients_parser)
     _add_client_args(list_clients_parser)
 
     pair_client_parser = subparsers.add_parser(
         CMD_PAIR_CLIENT, help="Pair a new client",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    _add_common_args(pair_client_parser)
+    _add_address_args(pair_client_parser)
     _add_pair_client_args(pair_client_parser)
 
     unpair_client_parser = subparsers.add_parser(
         CMD_UNPAIR_CLIENT, help="Unpair an existing client",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    _add_common_args(unpair_client_parser)
     _add_client_args(unpair_client_parser)
     _add_unpair_client_args(unpair_client_parser)
 
@@ -117,6 +126,11 @@ class Notifications(miramode.NotificationsBase):
         else:
             raise Exception(f"Unrecognized status: {status}")
         self._event.set()
+
+
+def _process_list_devices_command(args):
+    for name, address in miramode.get_available_devices():
+        print(f"{name}: {address}")
 
 
 def _process_list_clients_command(args):
@@ -183,7 +197,9 @@ def main():
 
     _setup_logging(args.debug)
 
-    if args.command == CMD_LIST_CLIENTS:
+    if args.command == CMD_LIST_DEVICES:
+        _process_list_devices_command(args)
+    elif args.command == CMD_LIST_CLIENTS:
         _process_list_clients_command(args)
     elif args.command == CMD_PAIR_CLIENT:
         _process_pair_client_command(args)

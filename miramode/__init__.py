@@ -69,6 +69,22 @@ def _split_chunks(data, chunk_size):
     return [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
 
 
+def _get_peripherals():
+    adapters = simplepyble.Adapter.get_adapters()
+    adapter = adapters[0]
+    adapter.scan_for(TIMEOUT * 1000)
+    return adapter.scan_get_results()
+
+
+def get_available_devices():
+    devices = []
+    peripherals = _get_peripherals()
+    for p in peripherals:
+        if "Mira" in p.identifier():
+            devices.append((p.identifier(), p.address()))
+    return devices
+
+
 class NotificationsBase():
     def client_details(self, client_slot, client_name):
         pass
@@ -126,15 +142,9 @@ class Connnection:
         self._client_id = client_id
         self._client_slot = client_slot
 
-    def _get_peripherals(self):
-        adapters = simplepyble.Adapter.get_adapters()
-        adapter = adapters[0]
-        adapter.scan_for(TIMEOUT * 1000)
-        return adapter.scan_get_results()
-
     @retrying.retry(stop_max_attempt_number=10)
     def connect(self):
-        peripherals = self._get_peripherals()
+        peripherals = _get_peripherals()
         pl = [p for p in peripherals if
               p.address().lower() == self._address.lower()]
         if not len(pl):
