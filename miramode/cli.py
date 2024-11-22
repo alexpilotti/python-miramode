@@ -78,7 +78,7 @@ def _add_client_args(parser):
         help="A previously paired client id")
     parser.add_argument(
         "-s", "--client-slot", required=True,
-        type=int,
+        type=_valid_slot,
         help="The client slot corresponding to the client id")
 
 
@@ -95,7 +95,7 @@ def _add_pair_client_args(parser):
 def _add_unpair_client_args(parser):
     parser.add_argument(
         "-u", "--client-slot-to-unpair", required=True,
-        type=int,
+        type=_valid_slot,
         help="The client slot to unpair")
 
 
