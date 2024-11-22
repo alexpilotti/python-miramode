@@ -53,6 +53,8 @@ sudo hcitool lescan
 The _-c_ argument is used to pass the new client id. If not provided, a random
 id will be generated. Take note of both the client id and the client slot
 returned by the device, as those will be needed when sending other commands.
+Do not forget to put the device in pairing mode by pressing the shower outlet
+button for 5 seconds!
 
 ```console
 miramodecli client-pair -a "xx:xx:xx:xx:xx:xx" -c 100100  -n Foobar
