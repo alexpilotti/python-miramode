@@ -4,7 +4,8 @@ setup(
     name="python-miramode",
     version="1.0.0",
     packages=find_packages(),
-    install_requires=[],
+    install_requires=[line.strip() for line in
+                      open("requirements.txt").readlines()],
     entry_points={
         'console_scripts': [
             'miramodecli = miramode.cli:main',
