@@ -50,8 +50,9 @@ sudo hcitool lescan
 
 ### Pair a new client
 
-The _-c_ argument is optional, if not provided, the CLI will generate a
-random id.
+The _-c_ argument is used to pass the new client id. If not provided, a random
+id will be generated. Take note of both the client id and the client slot
+returned by the device, as those will be needed when sending other commands.
 
 ```console
 miramodecli client-pair -a "xx:xx:xx:xx:xx:xx" -c 100100  -n Foobar
