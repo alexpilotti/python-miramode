@@ -24,6 +24,9 @@ TIMER_STOPPED = 0
 TIMER_RUNNING = 1
 TIMER_PAUSED = 3
 
+OUTLET_RUNNING = 0x64
+OUTLET_STOPPED = 0
+
 
 def _crc(data):
     i = 0
@@ -260,8 +263,8 @@ class Connnection:
             timer_state = payload[0]
             target_temperature = _convert_temperature_reverse(payload[2])
             actual_temperature = _convert_temperature_reverse(payload[4])
-            outlet_state_1 = payload[5] == 0x64
-            outlet_state_2 = payload[6] == 0x64
+            outlet_state_1 = payload[5] == OUTLET_RUNNING
+            outlet_state_2 = payload[6] == OUTLET_RUNNING
             remaining_seconds = struct.unpack(">H", payload[7:9])[0]
             succesful_update_command_counter = payload[9]
 
@@ -275,8 +278,8 @@ class Connnection:
             timer_state = payload[1]
             target_temperature = _convert_temperature_reverse(payload[3])
             actual_temperature = _convert_temperature_reverse(payload[5])
-            outlet_state_1 = payload[6] == 0x64
-            outlet_state_2 = payload[7] == 0x64
+            outlet_state_1 = payload[6] == OUTLET_RUNNING
+            outlet_state_2 = payload[7] == OUTLET_RUNNING
             remaining_seconds = struct.unpack(">H", payload[8:10])[0]
             succesful_update_command_counter = payload[10]
 
@@ -395,8 +398,8 @@ class Connnection:
             TIMER_RUNNING if outlet1 or outlet2 else TIMER_PAUSED,
             1,
             _convert_temperature(temperature),
-            0x64 if outlet1 else 0,
-            0x64 if outlet2 else 0])
+            OUTLET_RUNNING if outlet1 else OUTLET_STOPPED,
+            OUTLET_RUNNING if outlet2 else OUTLET_STOPPED])
         self._write(_get_payload_with_crc(payload, self._client_id))
 
     def turn_on_bathfill(self):
