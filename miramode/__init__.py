@@ -20,6 +20,10 @@ MAGIC_ID = 0x54d2ee63
 FAILURE = 0x80
 SUCCESS = 1
 
+TIMER_STOPPED = 0
+TIMER_RUNNING = 1
+TIMER_PAUSED = 3
+
 
 def _crc(data):
     i = 0
@@ -388,7 +392,7 @@ class Connnection:
         payload = bytearray([
             self._client_slot,
             0x87, 0x05,
-            1 if outlet1 or outlet2 else 3,
+            TIMER_RUNNING if outlet1 or outlet2 else TIMER_PAUSED,
             1,
             _convert_temperature(temperature),
             0x64 if outlet1 else 0,
