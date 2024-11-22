@@ -402,6 +402,6 @@ class Connnection:
             OUTLET_RUNNING if outlet2 else OUTLET_STOPPED])
         self._write(_get_payload_with_crc(payload, self._client_id))
 
-    def turn_on_bathfill(self):
-        payload = bytearray([self._client_slot, 0xb1, 1, 0])
+    def start_preset(self, preset_slot):
+        payload = bytearray([self._client_slot, 0xb1, 1, preset_slot])
         self._write(_get_payload_with_crc(payload, self._client_id))
