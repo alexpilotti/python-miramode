@@ -125,7 +125,7 @@ def _process_list_clients_command(args):
 
         event = threading.Event()
         notifications = Notifications(event)
-        conn._subscribe(notifications)
+        conn.subscribe(notifications)
 
         conn.request_client_slots()
         event.wait()
@@ -143,7 +143,7 @@ def _process_pair_client_command(args):
 
         event = threading.Event()
         notifications = Notifications(event, is_pairing=True)
-        conn._subscribe(notifications)
+        conn.subscribe(notifications)
 
         new_client_id = args.client_id
         if not new_client_id:
@@ -164,7 +164,7 @@ def _process_unpair_client_command(args):
 
         event = threading.Event()
         notifications = Notifications(event)
-        conn._subscribe(notifications)
+        conn.subscribe(notifications)
 
         conn.unpair_client(args.client_slot_to_unpair)
         event.wait()

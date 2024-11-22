@@ -160,7 +160,7 @@ class Connnection:
         logger.debug(f"Writing data: {_format_bytearray(data)}")
         self._device.char_write(UUID_WRITE, data)
 
-    def _subscribe(self, notifications):
+    def subscribe(self, notifications):
         notifications.partial_payload = bytearray()
         notifications.client_slot = None
         notifications.expected_payload_length = None
