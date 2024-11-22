@@ -40,7 +40,6 @@ python3 -m venv venv
 pip install .
 ```
 
-
 ## CLI Examples
 
 First, obtain the address of your shower device. Look for devices with a name
@@ -52,6 +51,13 @@ miramodecli devices-list
 
 The device address has the "xx:xx:xx:xx:xx:xx" format on Linux and Windows,
 and a UUID format on MacOS.
+
+For additional CLI usage help, just run _miramodecli_ without arguments or
+with a command followed by _-h_, e.g.:
+
+```console
+miramodecli outlets-control -h
+```
 
 ### Pair a new client
 
