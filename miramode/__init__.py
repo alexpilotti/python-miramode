@@ -130,7 +130,7 @@ class Connnection:
 
     #@retrying.retry(stop_max_attempt_number=10)
     async def connect(self):
-        device = await bleak.BleakScanner.find_device_by_address(self._address, cb=dict(use_bdaddr=True))
+        device = await bleak.BleakScanner.find_device_by_address(self._address)
         if device is None:
             raise Exception("Connection failed")
 
@@ -153,9 +153,9 @@ class Connnection:
     async def __aexit__(self, type, value, traceback):
         await self.disconnect()
 
-    def _write_chunks(self, data, chunk_size=20):
+    async def _write_chunks(self, data, chunk_size=20):
         for chunk in _split_chunks(data, chunk_size):
-            self._write(chunk)
+            await self._write(chunk)
 
     async def _write(self, data):
         logger.debug(f"Writing data: {_format_bytearray(data)}")
@@ -346,7 +346,7 @@ class Connnection:
         payload = bytearray([self._client_slot, 0x32, 1, 1])
         self._write(_get_payload_with_crc(payload, self._client_id))
 
-    def pair_client(self, new_client_id, client_name):
+    async def pair_client(self, new_client_id, client_name):
         new_client_id_bytes = struct.pack(">I", new_client_id)
         client_name_bytes = client_name.encode("UTF-8")
 
@@ -357,7 +357,7 @@ class Connnection:
 
         payload = (bytearray([0, 0xeb, 24]) + new_client_id_bytes +
                    client_name_bytes)
-        self._write_chunks(_get_payload_with_crc(payload, MAGIC_ID))
+        await self._write_chunks(_get_payload_with_crc(payload, MAGIC_ID))
 
     def unpair_client(self, client_slot_to_unpair):
         payload = bytearray(

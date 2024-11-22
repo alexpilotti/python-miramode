@@ -139,12 +139,12 @@ async def _process_list_clients_command(args):
             event.clear()
 
 
-def _process_pair_client_command(args):
-    with miramode.Connnection(args.address) as conn:
+async def _process_pair_client_command(args):
+    async with miramode.Connnection(args.address) as conn:
 
         event = threading.Event()
         notifications = Notifications(event, is_pairing=True)
-        conn.subscribe(notifications)
+        await conn.subscribe(notifications)
 
         new_client_id = args.client_id
         if not new_client_id:
@@ -154,20 +154,20 @@ def _process_pair_client_command(args):
         print(f"Pairing new client id: {new_client_id}, "
               f"name: {args.client_name}")
 
-        conn.pair_client(new_client_id, args.client_name)
+        await conn.pair_client(new_client_id, args.client_name)
         event.wait()
         event.clear()
 
 
-def _process_unpair_client_command(args):
-    with miramode.Connnection(
+async def _process_unpair_client_command(args):
+    async with miramode.Connnection(
             args.address, args.client_id, args.client_slot) as conn:
 
         event = threading.Event()
         notifications = Notifications(event)
-        conn.subscribe(notifications)
+        await conn.subscribe(notifications)
 
-        conn.unpair_client(args.client_slot_to_unpair)
+        await conn.unpair_client(args.client_slot_to_unpair)
         event.wait()
         event.clear()
 
@@ -187,9 +187,9 @@ def main():
     if args.command == CMD_LIST_CLIENTS:
         asyncio.run(_process_list_clients_command(args))
     elif args.command == CMD_PAIR_CLIENT:
-        _process_pair_client_command(args)
+        asyncio.run(_process_pair_client_command(args))
     elif args.command == CMD_UNPAIR_CLIENT:
-        _process_unpair_client_command(args)
+        asyncio.run(_process_unpair_client_command(args))
 
 
 if __name__ == '__main__':
