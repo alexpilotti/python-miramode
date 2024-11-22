@@ -147,7 +147,6 @@ class Connnection:
         #self._device = None
 
     async def __aenter__(self):
-        print(self._address)
         await self.connect()
         return self
 
