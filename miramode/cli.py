@@ -108,12 +108,14 @@ class Notifications(miramode.NotificationsBase):
         self._event.set()
 
     def success_or_failure(self, client_slot, status):
-        if self._is_pairing:
+        if status == miramode.FAILURE:
+            print(f"The command failed")
+        elif self._is_pairing:
             print(f"Assigned client slot: {status}")
         elif status == miramode.SUCCESS:
             print(f"The command completed successfully")
-        elif status == miramode.FAILURE:
-            print(f"The command failed")
+        else:
+            raise Exception(f"Unrecognized status: {status}")
         self._event.set()
 
 
