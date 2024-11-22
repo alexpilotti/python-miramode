@@ -82,6 +82,13 @@ miramodecli client-unpair -a <address> -c <client_id> -s <client_slot> \
 -u <client_id_to_unpair>
 ```
 
+### Turn the outlets on or off
+
+```console
+miramodecli outlets-control -a <address> -c <client_id> -s <client_slot> \
+-o1 <on|off> -o2 <on|off> -t <temperature>
+```
+
 ## Set debug logging level
 
 For additional logging details, all commands support a _--debug_ argument, e.g:

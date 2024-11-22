@@ -10,6 +10,28 @@ CMD_LIST_DEVICES = "devices-list"
 CMD_LIST_CLIENTS = "client-list"
 CMD_PAIR_CLIENT = "client-pair"
 CMD_UNPAIR_CLIENT = "client-unpair"
+CMD_CONTROL_OUTLETS = "outlets-control"
+
+
+def _valid_outlet_status(value):
+    if value.lower() == "on":
+        return True
+    elif value.lower() == "off":
+        return False
+    else:
+        raise argparse.ArgumentTypeError(
+            f'"{value}" is not a valid outlet status. Valid values are "on" '
+            'or "off"')
+
+
+def _valid_temperature(value):
+    try:
+        float_val = float(value)
+        if float_val < 0 or float_val >= 100:
+            raise argparse.ArgumentTypeError(f"{value} is out of range")
+        return float_val
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{value} is not a valid number.")
 
 
 def _valid_client_id(value):
@@ -66,6 +88,21 @@ def _add_unpair_client_args(parser):
         help="The client slot to unpair")
 
 
+def _add_control_outlets_args(parser):
+    parser.add_argument(
+        "-o1", "--outlet1", required=False,
+        type=_valid_outlet_status, default=False,
+        help="Turn on or off the first outlet")
+    parser.add_argument(
+        "-o2", "--outlet2", required=False,
+        type=_valid_outlet_status, default=False,
+        help="Turn on or off the second outlet")
+    parser.add_argument(
+        "-t", "--temperature", required=True,
+        type=_valid_temperature,
+        help="The target temperature")
+
+
 def _parse_args():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(
@@ -93,6 +130,12 @@ def _parse_args():
     _add_client_args(unpair_client_parser)
     _add_unpair_client_args(unpair_client_parser)
 
+    control_outlets_parser = subparsers.add_parser(
+        CMD_CONTROL_OUTLETS, help="Turn on or off the outlets",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    _add_client_args(control_outlets_parser)
+    _add_control_outlets_args(control_outlets_parser)
+
     # If no arguments are provided, print help
     if len(sys.argv) == 1:
         parser.print_help()
@@ -110,6 +153,13 @@ class Notifications(miramode.NotificationsBase):
 
     def client_details(self, client_slot, client_name):
         print(f"{client_name}")
+        self._event.set()
+
+    def controls_operated(
+            self, client_slot, change_made, timer_state, target_temperature,
+            actual_temperature, outlet_state_1, outlet_state_2,
+            remaining_seconds, succesful_update_command_counter):
+        print(f"The command completed successfully")
         self._event.set()
 
     def slots(self, client_slot, slots):
@@ -185,6 +235,19 @@ def _process_unpair_client_command(args):
         event.clear()
 
 
+def _process_control_outlets_command(args):
+    with miramode.Connnection(
+            args.address, args.client_id, args.client_slot) as conn:
+
+        event = threading.Event()
+        notifications = Notifications(event)
+        conn.subscribe(notifications)
+
+        conn.control_outlets(args.outlet1, args.outlet2, args.temperature)
+        event.wait()
+        event.clear()
+
+
 def _setup_logging(debug):
     level = logging.DEBUG if debug else logging.WARN
     logging.basicConfig(stream=sys.stdout, level=level)
@@ -205,6 +268,8 @@ def main():
         _process_pair_client_command(args)
     elif args.command == CMD_UNPAIR_CLIENT:
         _process_unpair_client_command(args)
+    elif args.command == CMD_CONTROL_OUTLETS:
+        _process_control_outlets_command(args)
 
 
 if __name__ == '__main__':
