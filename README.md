@@ -25,8 +25,10 @@ use at your own risk!*
 ## Requirements
 
 1. Python 3.9 and above
-2. Gatttool, a common BLE CLI tool on Linux
-3. Install this project:
+2. A Bluetooth Low Energy (BLE) interface, already included in Raspberry Pi
+devices, MacBooks and most laptops
+3. On Linux, make sure the _bluez_ package is installed
+4. Install this project:
 
 ```console
 cd python-miramode
@@ -41,12 +43,15 @@ pip install .
 
 ## CLI Examples
 
-First, obtain the address of your device. Look for devices with a name
+First, obtain the address of your shower device. Look for devices with a name
 starting with *Mira*:
 
 ```console
-sudo hcitool lescan
+miramodecli devices-list
 ```
+
+The device address has the "xx:xx:xx:xx:xx:xx" format on Linux and Windows,
+and a UUID format on MacOS.
 
 ### Pair a new client
 
@@ -57,7 +62,7 @@ Do not forget to put the device in pairing mode by pressing the shower outlet
 button for 5 seconds!
 
 ```console
-miramodecli client-pair -a "xx:xx:xx:xx:xx:xx" -c 100100  -n Foobar
+miramodecli client-pair -a <address> -c <new_client_id>  -n <new_client_name>
 ```
 
 ### List existing clients:
@@ -67,14 +72,14 @@ requires a valid client id and its corresponding slot, obtained from a
 previous pairing:
 
 ```console
-client-list -a "xx:xx:xx:xx:xx:xx" -c <client_id> -s <client_slot>
+client-list -a <address> -c <client_id> -s <client_slot>
 ```
 
 ### Unpair an existing client
 
 ```console
-miramodecli client-unpair -a "xx:xx:xx:xx:xx:xx" -c <client_id> \
--s <client_slot> -u <client_id_to_unpair>
+miramodecli client-unpair -a <address> -c <client_id> -s <client_slot> \
+-u <client_id_to_unpair>
 ```
 
 ## Set debug logging level
@@ -82,7 +87,7 @@ miramodecli client-unpair -a "xx:xx:xx:xx:xx:xx" -c <client_id> \
 For additional logging details, all commands support a _--debug_ argument, e.g:
 
 ```console
-miramodecli client-pair -a "xx:xx:xx:xx:xx:xx" -c 100100  -n Foobar --debug
+miramodecli client-pair -a xx:xx:xx:xx:xx:xx -c 100100  -n Foobar --debug
 ```
 
 ## Acknowledgements
