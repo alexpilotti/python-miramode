@@ -1,4 +1,4 @@
 pexpect
-pygatt
+simplepyble
 retrying
 setuptools

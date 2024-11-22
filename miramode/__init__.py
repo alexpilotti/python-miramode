@@ -1,8 +1,8 @@
 import logging
 import struct
 
-import pygatt
 import retrying
+import simplepyble
 
 logger = logging.getLogger(__name__)
 
@@ -118,8 +118,7 @@ class NotificationsBase():
 class Connnection:
     def __init__(self, address, client_id=None, client_slot=None):
         self._address = address
-        self._adapter = None
-        self._device = None
+        self._peripheral = None
         self._client_id = client_id
         self._client_slot = client_slot
 
@@ -127,23 +126,27 @@ class Connnection:
         self._client_id = client_id
         self._client_slot = client_slot
 
+    def _get_peripherals(self):
+        adapters = simplepyble.Adapter.get_adapters()
+        adapter = adapters[0]
+        adapter.scan_for(TIMEOUT * 1000)
+        return adapter.scan_get_results()
+
     @retrying.retry(stop_max_attempt_number=10)
     def connect(self):
-        adapter = pygatt.GATTToolBackend()
-        adapter.start()
+        peripherals = self._get_peripherals()
+        pl = [p for p in peripherals if
+              p.address().lower() == self._address.lower()]
+        if not len(pl):
+            raise Exception(f"Address not found: {self._address}")
 
-        device = adapter.connect(
-            self._address,
-            timeout=TIMEOUT,
-            address_type=pygatt.BLEAddressType.random)
+        peripheral = pl[0]
+        peripheral.connect()
 
-        self._adapter = adapter
-        self._device = device
+        self._peripheral = peripheral
 
     def disconnect(self):
-        self._device = None
-        self._adapter.stop()
-        self._adapter = None
+        self._peripheral = None
 
     def __enter__(self):
         self.connect()
@@ -152,25 +155,39 @@ class Connnection:
     def __exit__(self, type, value, traceback):
         self.disconnect()
 
+    def _read(self, characteristic):
+        service = self._get_service_for_characteristic(characteristic)
+        return self._peripheral.read(service, characteristic)
+
     def _write_chunks(self, data, chunk_size=20):
         for chunk in _split_chunks(data, chunk_size):
             self._write(chunk)
 
     def _write(self, data):
         logger.debug(f"Writing data: {_format_bytearray(data)}")
-        self._device.char_write(UUID_WRITE, data)
+        service = self._get_service_for_characteristic(UUID_WRITE)
+        self._peripheral.write_command(service, UUID_WRITE, bytes(data))
+
+    def _get_service_for_characteristic(self, characteristic):
+        services = self._peripheral.services()
+        for service in services:
+            for c in service.characteristics():
+                if c.uuid() == characteristic:
+                    return service.uuid()
+        raise Exception(f"Characteristic not found: {characteristic}")
 
     def subscribe(self, notifications):
         notifications.partial_payload = bytearray()
         notifications.client_slot = None
         notifications.expected_payload_length = None
 
-        self._device.subscribe(
-            UUID_READ,
-            callback=lambda handle, value: self._handle_data(
-                handle, value, notifications))
+        service = self._get_service_for_characteristic(UUID_READ)
 
-    def _handle_data(self, handle, value, notifications):
+        self._peripheral.notify(
+            service, UUID_READ, lambda value: self._handle_data(
+                value, notifications))
+
+    def _handle_data(self, value, notifications):
         if len(notifications.partial_payload) > 0:
             notifications.partial_payload.extend(value)
             client_slot = notifications.client_slot
@@ -297,11 +314,9 @@ class Connnection:
                 outlet_enabled, preset_name)
 
     def get_device_info(self):
-        device_name = self._device.char_read(UUID_DEVICE_NAME).decode('UTF-8')
-        manufacturer = self._device.char_read(UUID_MANUFACTURER).decode(
-            'UTF-8')
-        model_number = self._device.char_read(UUID_MODEL_NUMBER).decode(
-            'UTF-8')
+        device_name = self._read(UUID_DEVICE_NAME).decode('UTF-8')
+        manufacturer = self._read(UUID_MANUFACTURER).decode('UTF-8')
+        model_number = self._read(UUID_MODEL_NUMBER).decode('UTF-8')
 
         return (device_name, manufacturer, model_number)
 
