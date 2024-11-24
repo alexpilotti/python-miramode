@@ -107,7 +107,7 @@ miramodecli preset-start -a <address> -c <client_id> -s <client_slot> \
 
 ### Get the device state
 
-This is useful to get the state of the the outlets (_on_ or _off_), the
+This command will return the state of the the outlets (_on_ or _off_), the
 target and actual temperatures, the timer state and the remaining seconds.
 
 ```console
