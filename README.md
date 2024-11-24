@@ -31,6 +31,7 @@ devices, MacBooks and most laptops
 4. Install this project:
 
 ```console
+git clone https://github.com/alexpilotti/python-miramode
 cd python-miramode
 
 # Optionally use a Python virtual environment:
