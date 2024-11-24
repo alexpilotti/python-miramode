@@ -207,14 +207,13 @@ class Notifications(miramode.NotificationsBase):
             self, client_slot, timer_state, target_temperature,
             actual_temperature, outlet_state_1, outlet_state_2,
             remaining_seconds, succesful_update_command_counter):
-
-        print(f"Timer state: {TIMER_STATE_STR.get(timer_state, timer_state)}")
-        print(f"Target temperature: {target_temperature:.1f}C")
-        print(f"Actual temperature: {actual_temperature:.1f}C")
         print("Outlet 1: "
               f"{OUTLET_STATE_STR.get(outlet_state_1, outlet_state_1)}")
         print("Outlet 2: "
               f"{OUTLET_STATE_STR.get(outlet_state_2, outlet_state_2)}")
+        print(f"Target temperature: {target_temperature:.1f}C")
+        print(f"Actual temperature: {actual_temperature:.1f}C")
+        print(f"Timer state: {TIMER_STATE_STR.get(timer_state, timer_state)}")
         print(f"Remaining seconds: {remaining_seconds}")
         self._event.set()
 
