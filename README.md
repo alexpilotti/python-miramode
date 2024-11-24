@@ -105,6 +105,15 @@ miramodecli preset-start -a <address> -c <client_id> -s <client_slot> \
 -p <preset_slot>
 ```
 
+### Get the device state
+
+This is useful to get the state of the the outlets (_on_ or _off_), the
+target and actual temperatures, the timer state and the remaining seconds.
+
+```console
+miramodecli device-state -a <address> -c <client_id> -s <client_slot>
+```
+
 Use the _outlets-control_ command to turn off the outlet(s) before the
 preset's timer ends if needed.
 

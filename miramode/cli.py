@@ -7,11 +7,23 @@ import threading
 import miramode
 
 CMD_LIST_DEVICES = "devices-list"
+CMD_GET_DEVICE_STATE = "device-state"
 CMD_LIST_CLIENTS = "client-list"
 CMD_PAIR_CLIENT = "client-pair"
 CMD_UNPAIR_CLIENT = "client-unpair"
 CMD_CONTROL_OUTLETS = "outlets-control"
 CMD_START_PRESET = "preset-start"
+
+OUTLET_STATE_STR = {
+    miramode.OUTLET_STOPPED: "off",
+    miramode.OUTLET_RUNNING: "on",
+}
+
+TIMER_STATE_STR = {
+    miramode.TIMER_PAUSED: "paused",
+    miramode.TIMER_STOPPED: "stopped",
+    miramode.TIMER_RUNNING: "running",
+}
 
 
 def _valid_slot(value):
@@ -131,6 +143,11 @@ def _parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     _add_common_args(list_devices_parser)
 
+    get_device_state_parser = subparsers.add_parser(
+        CMD_GET_DEVICE_STATE, help="Get device state",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    _add_client_args(get_device_state_parser)
+
     list_clients_parser = subparsers.add_parser(
         CMD_LIST_CLIENTS, help="List clients",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -186,6 +203,21 @@ class Notifications(miramode.NotificationsBase):
         print(f"The command completed successfully")
         self._event.set()
 
+    def device_state(
+            self, client_slot, timer_state, target_temperature,
+            actual_temperature, outlet_state_1, outlet_state_2,
+            remaining_seconds, succesful_update_command_counter):
+
+        print(f"Timer state: {TIMER_STATE_STR.get(timer_state, timer_state)}")
+        print(f"Target temperature: {target_temperature:.1f}C")
+        print(f"Actual temperature: {actual_temperature:.1f}C")
+        print("Outlet 1: "
+              f"{OUTLET_STATE_STR.get(outlet_state_1, outlet_state_1)}")
+        print("Outlet 2: "
+              f"{OUTLET_STATE_STR.get(outlet_state_2, outlet_state_2)}")
+        print(f"Remaining seconds: {remaining_seconds}")
+        self._event.set()
+
     def slots(self, client_slot, slots):
         self.slots = slots
         self._event.set()
@@ -205,6 +237,19 @@ class Notifications(miramode.NotificationsBase):
 def _process_list_devices_command(args):
     for name, address in miramode.get_available_devices():
         print(f"{name}: {address}")
+
+
+def _process_get_device_command(args):
+    with miramode.Connnection(
+            args.address, args.client_id, args.client_slot) as conn:
+
+        event = threading.Event()
+        notifications = Notifications(event)
+        conn.subscribe(notifications)
+
+        conn.request_device_state()
+        event.wait()
+        event.clear()
 
 
 def _process_list_clients_command(args):
@@ -299,6 +344,8 @@ def main():
 
     if args.command == CMD_LIST_DEVICES:
         _process_list_devices_command(args)
+    elif args.command == CMD_GET_DEVICE_STATE:
+        _process_get_device_command(args)
     elif args.command == CMD_LIST_CLIENTS:
         _process_list_clients_command(args)
     elif args.command == CMD_PAIR_CLIENT:
