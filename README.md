@@ -24,11 +24,16 @@ use at your own risk!*
 
 ## Requirements
 
-1. Python 3.9 and above
-2. A Bluetooth Low Energy (BLE) interface, already included in Raspberry Pi
+1. A Mira Mode shower / bath fill. Tested successufully so far with the
+   following models:
+    * *Dual Outlet Shower - 1874.203*
+    * *Dual Outlet Bath Fill - 1874.205*
+2. Python 3.9 and above
+    * Tested with Python 3.11 and Python 3.12
+3. A Bluetooth Low Energy (BLE) interface, already included in Raspberry Pi
 devices, MacBooks and most laptops
-3. On Linux, make sure the _bluez_ package is installed
-4. Install this project:
+4. On Linux, make sure the _bluez_ package is installed
+5. Install this project:
 
 ```console
 git clone https://github.com/alexpilotti/python-miramode
