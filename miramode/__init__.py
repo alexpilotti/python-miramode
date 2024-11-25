@@ -189,6 +189,8 @@ class Connnection:
         services = self._peripheral.services()
         for service in services:
             for c in service.characteristics():
+                logger.debug(f'Found service: "{service.uuid()}", '
+                             f'characteristic: "{c.uuid()}"')
                 if c.uuid() == characteristic:
                     return service.uuid()
         raise Exception(f"Characteristic not found: {characteristic}")
