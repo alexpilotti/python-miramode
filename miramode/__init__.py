@@ -53,11 +53,12 @@ def _get_payload_with_crc(payload, client_id):
 
 
 def _convert_temperature(celsius):
-    return int(max(0, min(255, round(celsius * 10 - 256))))
+    value = int(max(0, min((1 << 16) - 1, round(celsius * 10))))
+    return struct.pack(">H", value)
 
 
 def _convert_temperature_reverse(mira_temp):
-    return (256 + mira_temp) / 10.0
+    return struct.unpack(">H", mira_temp)[0] / 10.0
 
 
 def _format_bytearray(ba):
@@ -263,8 +264,8 @@ class Connnection:
 
         elif payload_length == 10:
             timer_state = payload[0]
-            target_temperature = _convert_temperature_reverse(payload[2])
-            actual_temperature = _convert_temperature_reverse(payload[4])
+            target_temperature = _convert_temperature_reverse(payload[1:3])
+            actual_temperature = _convert_temperature_reverse(payload[3:5])
             outlet_state_1 = payload[5] == OUTLET_RUNNING
             outlet_state_2 = payload[6] == OUTLET_RUNNING
             remaining_seconds = struct.unpack(">H", payload[7:9])[0]
@@ -278,8 +279,8 @@ class Connnection:
         elif payload_length == 11 and payload[0] in [1, 0x80]:
             change_made = payload[0] == 1
             timer_state = payload[1]
-            target_temperature = _convert_temperature_reverse(payload[3])
-            actual_temperature = _convert_temperature_reverse(payload[5])
+            target_temperature = _convert_temperature_reverse(payload[2:4])
+            actual_temperature = _convert_temperature_reverse(payload[4:6])
             outlet_state_1 = payload[6] == OUTLET_RUNNING
             outlet_state_2 = payload[7] == OUTLET_RUNNING
             remaining_seconds = struct.unpack(">H", payload[8:10])[0]
@@ -293,8 +294,8 @@ class Connnection:
         elif payload_length == 11 and payload[0] in [0, 0x4, 0x8]:
             outlet_flag = payload[0]
             min_duration_seconds = payload[4]
-            max_temperature = _convert_temperature_reverse(payload[6])
-            min_temperature = _convert_temperature_reverse(payload[8])
+            max_temperature = _convert_temperature_reverse(payload[5:7])
+            min_temperature = _convert_temperature_reverse(payload[7:9])
             succesful_update_command_counter = payload[10]
 
             notifications.outlet_settings(
@@ -323,7 +324,7 @@ class Connnection:
 
         elif payload_length == 24:
             preset_slot = payload[0]
-            target_temperature = _convert_temperature_reverse(payload[2])
+            target_temperature = _convert_temperature_reverse(payload[1:3])
             duration_seconds = payload[4]
             outlet_enabled = _bits_to_list(payload[5], 8)
             preset_name = payload[8:].decode('UTF-8')
@@ -394,12 +395,12 @@ class Connnection:
         self._write(_get_payload_with_crc(payload, self._client_id))
 
     def control_outlets(self, outlet1, outlet2, temperature):
+        temperature_bytes = _convert_temperature(temperature)
         payload = bytearray([
             self._client_slot,
             0x87, 0x05,
             TIMER_RUNNING if outlet1 or outlet2 else TIMER_PAUSED,
-            1,
-            _convert_temperature(temperature),
+            temperature_bytes[0], temperature_bytes[1],
             OUTLET_RUNNING if outlet1 else OUTLET_STOPPED,
             OUTLET_RUNNING if outlet2 else OUTLET_STOPPED])
         self._write(_get_payload_with_crc(payload, self._client_id))
